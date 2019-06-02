@@ -1,9 +1,12 @@
-# data generation
+#-----data generation
 
 #  super parameters
-n <- 200
-r <- 5 # 9, 19
+nr <- 200 # train
+ns <- 50  # test
+n <- nr + ns
+r <- 5 # or 9, 19
 
+method = "LR"
 #  location
 X <- runif(n)
 # kern == max(0, epan)
@@ -29,7 +32,7 @@ bandwidth <- 0
 #  - Pa(1/3, 1, 0)
 #  - Pa(1/2, 1, 0)
 #  - Pa(1, 1, 0)
-eps <- rnorm(0, 1)
+eps <- rnorm(n)
 
 
 generate_data <- function(X, eps) {
@@ -37,15 +40,29 @@ generate_data <- function(X, eps) {
 }
 
 Y = generate_data(X, eps)
-hist(Y)
 
+# LL-IS
+
+# Linear Regression
+if (method == "LR") {
+  dat = data.frame(X, Y)
+  mod = lm(Y ~ X, data = dat)
+  print(summary(mod))
+  plot(Y ~ X, data = dat, cex = 0.5)
+  abline(mod, col="red")
+}
+
+if (method == "LL-IS") {
+
+}
 
 # LCQR-MDM
+
 
 
 # LCER-MDM
 
 
-# LL-IS
+
 
 
