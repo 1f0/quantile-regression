@@ -5,8 +5,10 @@ nr <- 200 # train
 ns <- 50  # test
 n <- nr + ns
 r <- 5 # or 9, 19
+set.seed(496)
 
-method = "LR"
+method <- "LL-IS"
+# method <- "OLS"
 #  location
 X <- runif(n)
 # kern == max(0, epan)
@@ -17,7 +19,7 @@ kern <- function(psi) {
 }
 
 
-bandwidth <- 0
+bandwidth <- 0.2
 
 #  error config:
 #  normal error
@@ -39,21 +41,34 @@ generate_data <- function(X, eps) {
   return(X * sin(2 * pi * X) + (2 + cos(2 * pi * X)) / 20 * eps)
 }
 
-Y = generate_data(X, eps)
 
-# LL-IS
+Y <- generate_data(X, eps)
+dat <- data.frame(X, Y)
 
-# Linear Regression
-if (method == "LR") {
-  dat = data.frame(X, Y)
-  mod = lm(Y ~ X, data = dat)
+# Linear model
+if (method == "OLS") {
+  mod <- lm(Y ~ X)
   print(summary(mod))
-  plot(Y ~ X, data = dat, cex = 0.5)
+  plot(Y ~ X)
   abline(mod, col="red")
 }
 
 if (method == "LL-IS") {
+  mod <- loess(Y ~ X, degree = 1, span = bandwidth)
+  Z <- predict(mod)
+  print(mod)
 
+  plot(Y ~ X)
+
+  ## plot method 1, subtlely different from method 2
+  # j <- order(X)
+  # lines(X[j], Z[j], col="red")
+
+  # plot method 2, since scatter.smooth cannot set line color
+  lines(loess.smooth(X, Y, degree = 1, span = bandwidth), col = "red")
+
+  #method 3: not work yet
+  # lattice::xyplot(Y ~ X, data=dat, type=c('p'), col.line='red')
 }
 
 # LCQR-MDM
