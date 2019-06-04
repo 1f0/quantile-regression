@@ -4,22 +4,13 @@
 nr <- 200 # train
 ns <- 50  # test
 n <- nr + ns
-r <- 5 # or 9, 19
 set.seed(496)
 
-method <- "LL-IS"
-# method <- "OLS"
-#  location
+method <- "LCQR-MDM"
+
+#  samples
 X <- runif(n)
-# kern == max(0, epan)
-kern <- function(psi) {
-  q <- 1 - psi^2
-  q[q < 0] <- 0
-  return(0.75 * q)
-}
 
-
-bandwidth <- 0.2
 
 #  error config:
 #  normal error
@@ -54,7 +45,9 @@ if (method == "OLS") {
 }
 
 if (method == "LL-IS") {
-  mod <- loess(Y ~ X, degree = 1, span = bandwidth)
+  alpha <- 0.2 # proportion of neighbor
+
+  mod <- loess(Y ~ X, degree = 1, span = alpha)
   Z <- predict(mod)
   print(mod)
 
@@ -65,14 +58,41 @@ if (method == "LL-IS") {
   # lines(X[j], Z[j], col="red")
 
   # plot method 2, since scatter.smooth cannot set line color
-  lines(loess.smooth(X, Y, degree = 1, span = bandwidth), col = "red")
+  lines(loess.smooth(X, Y, degree = 1, span = alpha), col = "red")
 
   #method 3: not work yet
   # lattice::xyplot(Y ~ X, data=dat, type=c('p'), col.line='red')
 }
 
-# LCQR-MDM
 
+# LCQR-MDM
+bandwidth <- 0.2
+r <- 5 # or 9, 19 # should be odd num
+
+# kern == max(0, epan)
+kern <- function(psi) {
+  q <- 1 - psi^2
+  q[q < 0] <- 0
+  return(0.75 * q)
+}
+
+if (method == "LCQR-MDM") {
+  t <- n # test on all data
+  Xt <- sample(X, t)
+
+  # quantile position
+  tau_r <- seq(from = 1/r, to = 1 - 1/r, length.out = r - 1)
+
+  rho <- function(tau, x) {
+    if (x > 0)
+      return(tau * x)
+    else
+      return((tau - 1) * x)
+  }
+
+  print(X)
+  print(Xt)
+}
 
 
 # LCER-MDM
