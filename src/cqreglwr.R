@@ -1,4 +1,4 @@
-qreglwr <- function(form,taumat=c(.10,.25,.50,.75,.90),window=.25,bandwidth=0,kern="tcub",distance="Mahal",target=NULL,data=NULL) {
+cqreglwr <- function(form,taumat=c(.10,.25,.50,.75,.90),window=.25,bandwidth=0,kern="tcub",distance="Mahal",target=NULL,data=NULL) {
   ntau = length(taumat)
 
   mat <- model.frame(form,data=data)
@@ -83,31 +83,39 @@ qreglwr <- function(form,taumat=c(.10,.25,.50,.75,.90),window=.25,bandwidth=0,ke
     if (nk==2) {x2 <- xmat[samp,2]-target[i,2] }
     k <- wgt(dist[samp]/h)
 
-    for (j in seq(1:ntau)) {
-      if (nk==1) {fit <- summary(rq(y[samp]~x1, weights=k, tau=taumat[j] ), covariance=TRUE) }
-      if (nk==2) {fit <- summary(rq(y[samp]~x1+x2, weights=k, tau=taumat[j] ), covariance=TRUE) }
-      ytarget[i,j] = fit$coef[1]
-      ytarget.se[i,j] = sqrt(fit$cov[1,1])
-      dtarget1[i,j] = fit$coef[2]
-      dtarget1.se[i,j] = sqrt(fit$cov[2,2])
-      if (nk==2) {
-        dtarget2[i,j] = fit$coef[3]
-        dtarget2.se[i,j] = sqrt(fit$cov[3,3])
-      }
+
+    print(NROW(x1))
+    print(nrow(as.matrix(x1)))
+    print(class(x1))
+    print(typeof(x1))
+    print(length(taumat))
+    print(length(k))
+
+
+    print(rq.fit.hogg(as.matrix(x1), y[samp], weights=k, taus=taumat))
+    stop()
+
+    if (nk==1) {fit <- summary(rq.fit.hogg(y[samp]~x1, weights=k, taus=taumat), covariance=TRUE) }
+    if (nk==2) {fit <- summary(rq.fit.hogg(y[samp]~x1+x2, weights=k, taus=taumat), covariance=TRUE) }
+    ytarget[i] = fit$coef[1]
+    ytarget.se[i] = sqrt(fit$cov[1,1])
+    dtarget1[i] = fit$coef[2]
+    dtarget1.se[i] = sqrt(fit$cov[2,2])
+    if (nk==2) {
+      dtarget2[i] = fit$coef[3]
+      dtarget2.se[i] = sqrt(fit$cov[3,3])
     }
   }
 
   if (alldata==FALSE) {
-    for (j in seq(1:ntau)) {
-      yhat[,j] <- smooth12(target,ytarget[,j],xmat)
-      dhat1[,j] <- smooth12(target,dtarget1[,j],xmat)
-      dhat2[,j] <- 0
-      if (nk==2){dhat2[,j] <- smooth12(target,dtarget2[,j],xmat)}
-      yhat.se[,j] <- smooth12(target,ytarget.se[,j],xmat)
-      dhat1.se[,j] <- smooth12(target,ytarget.se[,j],xmat)
-      dhat2.se[,j] <- 0
-      if (nk==2){dhat2.se[,j] <- smooth12(target,dtarget2.se[,j],xmat)}
-    }
+    yhat <- smooth12(target,ytarget,xmat)
+    dhat1 <- smooth12(target,dtarget1,xmat)
+    dhat2 <- 0
+    if (nk==2){dhat2 <- smooth12(target,dtarget2,xmat)}
+    yhat.se <- smooth12(target,ytarget.se,xmat)
+    dhat1.se <- smooth12(target,ytarget.se,xmat)
+    dhat2.se <- 0
+    if (nk==2){dhat2.se <- smooth12(target,dtarget2.se,xmat)}
   }
 
   if (alldata==TRUE) {
@@ -126,3 +134,4 @@ qreglwr <- function(form,taumat=c(.10,.25,.50,.75,.90),window=.25,bandwidth=0,ke
   return(out)    
 }
 # copy from McSpatial
+

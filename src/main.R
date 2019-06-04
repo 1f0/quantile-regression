@@ -67,31 +67,24 @@ if (method == "LL-IS") {
 
 # LCQR-MDM
 bandwidth <- 0.2
-r <- 5 # or 9, 19 # should be odd num
-
-# kern == max(0, epan)
-kern <- function(psi) {
-  q <- 1 - psi^2
-  q[q < 0] <- 0
-  return(0.75 * q)
-}
+r <- 5 # or 9, 19 # should be odd num so that median exists
 
 if (method == "LCQR-MDM") {
-  t <- n # test on all data
-  Xt <- sample(X, t)
-
   # quantile position
-  tau_r <- seq(from = 1/r, to = 1 - 1/r, length.out = r - 1)
+  tau_r <- seq(from = 1/(r+1), to = 1 - 1/(r+1), length.out = r)
+  
+  #LQR
+  # mod <- McSpatial::qreglwr(Y~X, taumat=tau_r, kern="epan",target="alldata")
+  # j <- order(X)
+  # plot(Y~X)
+  # for (i in 1:r) {
+  #   lines(X[j], mod$yhat[j,i], col="red")
+  # }
 
-  rho <- function(tau, x) {
-    if (x > 0)
-      return(tau * x)
-    else
-      return((tau - 1) * x)
-  }
-
-  print(X)
-  print(Xt)
+  library("quantreg")
+  if (!exists("cqreglwr", mode="function")) source("cqreglwr.R")
+  mod <- cqreglwr(Y~X, taumat=tau_r, kern="epan",target="alldata")
+  print(mod)
 }
 
 
