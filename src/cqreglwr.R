@@ -1,3 +1,68 @@
+mycqr <-
+function (x, y, taus = c(.1,.3,.5), weights = NULL,  
+    R= NULL, r = NULL, beta = 0.99995, eps = 1e-06) 
+{
+    if (is.null(weights))
+        stop("cannot handle NULL weights")
+    kern_weights = weights
+    ntau = length(taus)
+    weights = rep(1 / ntau, ntau)
+    if (length(kern_weights) != length(y))
+        stop("kern weights and y differ in length")
+
+    n <- length(y)
+    n2 <- NROW(R)
+    m <- length(taus)
+    p <- ncol(x)+m
+    if (n != nrow(x)) 
+        stop("x and y don't match n")
+    if (m != length(weights)) 
+        stop("taus and weights differ in length")
+    if (any(taus < eps) || any(taus > 1 - eps)) 
+        stop("taus outside (0,1)")
+    W <- diag(weights)
+    if(m == 1) W <- weights
+    x <- as.matrix(x)
+    X <- cbind(kronecker(W,rep(1,n)),kronecker(weights,x))
+    y <- kronecker(weights,y)
+    rhs <- c(weights*(1 - taus)*n, sum(weights*(1-taus)) * apply(x, 2, sum))
+    if(n2!=length(r))
+    stop("R and r of incompatible dimension")
+    if(!is.null(R))
+    if(ncol(R)!=p)
+        stop("R and X of incompatible dimension")
+    d <- rep(1, m*n)
+    u <- rep(1, m*n)
+    if(length(r)){
+       wn1 <- rep(0, 10 * m*n)
+       wn1[1:(m*n)] <- .5
+       wn2 <- rep(0,6*n2)
+       wn2[1:n2] <- 1 
+       z <- .Fortran("rqfnc", as.integer(m*n), as.integer(n2), as.integer(p), 
+           a1 = as.double(t(as.matrix(X))), c1 = as.double(-y), 
+           a2 = as.double(t(as.matrix(R))), c2 = as.double(-r), 
+           rhs = as.double(rhs), d1 = double(m*n), d2 = double(n2), 
+           as.double(u), beta = as.double(beta), eps = as.double(eps), 
+           wn1 = as.double(wn1), wn2 = as.double(wn2), wp = double((p + 3) * p), 
+       it.count = integer(3), info = integer(1))
+    }
+    else{
+        wn <- rep(0, 10 * m*n)
+        wn[1:(m*n)] <- .5
+        z <- .Fortran("rqfnb", as.integer(m*n), as.integer(p), a = as.double(t(as.matrix(X))), 
+        c = as.double(-y), rhs = as.double(rhs), d = as.double(d), as.double(u), 
+        beta = as.double(beta), eps = as.double(eps), wn = as.double(wn), 
+        wp = double((p + 3) * p), it.count = integer(2), info = integer(1))
+    }
+    # if (z$info != 0) 
+    #     warning(paste("Info = ", z$info, "in stepy: singular design: iterations ", z$it.count[1]))
+
+    coefficients <- -z$wp[1:p]
+    if(any(is.na(coefficients)))stop("NA coefs:  infeasible problem?")
+    list(coefficients = coefficients, nit = z$it.count, flag = z$info)
+}
+
+# copy from quantreg
 cqreglwr <- function(form,taumat=c(.10,.25,.50,.75,.90),window=.25,bandwidth=0,kern="tcub",distance="Mahal",target=NULL,data=NULL) {
   ntau = length(taumat)
 
@@ -83,17 +148,10 @@ cqreglwr <- function(form,taumat=c(.10,.25,.50,.75,.90),window=.25,bandwidth=0,k
     if (nk==2) {x2 <- xmat[samp,2]-target[i,2] }
     k <- wgt(dist[samp]/h)
 
-
-    print(NROW(x1))
-    print(nrow(as.matrix(x1)))
-    print(class(x1))
-    print(typeof(x1))
-    print(length(taumat))
-    print(length(k))
-
-
-    print(rq.fit.hogg(as.matrix(x1), y[samp], weights=k, taus=taumat))
-    stop()
+    # hacking replace
+    rq.fit.hogg <- mycqr
+    print(summary(rq.fit.hogg(as.matrix(x1), y[samp], weights=k, taus=taumat), covariance=TRUE))
+    stop("debug")
 
     if (nk==1) {fit <- summary(rq.fit.hogg(y[samp]~x1, weights=k, taus=taumat), covariance=TRUE) }
     if (nk==2) {fit <- summary(rq.fit.hogg(y[samp]~x1+x2, weights=k, taus=taumat), covariance=TRUE) }
