@@ -29,6 +29,7 @@ eps <- rnorm(n)
 
 
 generate_data <- function(X, eps) {
+  return(X + 1)
   return(X * sin(2 * pi * X) + (2 + cos(2 * pi * X)) / 20 * eps)
 }
 
@@ -82,8 +83,9 @@ if (method == "LCQR-MDM") {
   # }
 
   library("quantreg")
-  if (!exists("cqreglwr", mode="function")) source("cqreglwr.R")
-  mod <- cqreglwr(Y~X, taumat=tau_r, kern="epan",target="alldata")
+  # if (!exists("cqreglwr", mode="function")) source("cqreglwr.R")
+  source("cqreglwr.R") # debug hack
+  mod <- cqreglwr(Y~X, taumat=tau_r, kern="epan",target="alldata",distance="Euclid")
   print(mod)
 }
 
