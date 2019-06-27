@@ -1,6 +1,6 @@
 *.pdf
 *.png
 *.jpg
-ref
 data
-loess-*
+doc
+ref
