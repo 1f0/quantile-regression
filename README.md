@@ -4,4 +4,4 @@ A simple project to play with R Language. An effort to implement the paper: http
 
 The result of local weight least square is:
 
-![](data/ll-ls2.png)
+![](data/ll-ls2-sm.png)
